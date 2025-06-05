@@ -1,0 +1,38 @@
+name: Upload ZenAgents Library to Google Cloud Storage
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '**/*.json'
+
+jobs:
+  upload-json-files:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: GCloud auth
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          token_format: access_token
+          workload_identity_provider: '${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}'
+          service_account: '${{ secrets.SERVICE_ACCOUNT }}'
+
+      - name: Upload agents directory to GCloud Storage
+        run: |
+          # Upload the entire agents directory to preserve structure
+          echo "Uploading agents directory structure..."
+          gcloud storage cp -r agents/ gs://zencoder-public/zen-agents/
+          
+          # Upload mcp-library.json to the root of the bucket
+          echo "Uploading mcp-library.json to bucket root..."
+          gcloud storage cp mcp-library.json gs://zencoder-public/
